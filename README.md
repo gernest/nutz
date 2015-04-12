@@ -22,8 +22,8 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
         // this function exits
         defer s.DeleteDatabase()
     
-        // creates the bucket if it does not exxist
-        // and takes an optional bucket list in whick the
+        // creates the bucket if it does not exist
+        // and takes an optional bucket list in which the
         // data you want to be stored
     
         // For instance you want to store a banana.
@@ -39,7 +39,7 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
     
         t:=b.CreateDataRecord("jungle",banana.key,[]byte(banana.value), "Tanzania")
     
-        // What is happens, is a bucket "Tanzania" is created insinside a bucket "jungle"
+        // What is happens, is a bucket "Tanzania" is created inside a bucket "jungle"
         // and the key, value pairs( in our case banana ) are stored inside the nested bucket
         // You can list as many buckets as you want and everything will work like a charm
     
@@ -77,7 +77,7 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
         // Retrieving the above stored banana will be as simple like this
         g:=b.GetDataRecord("jungle",banana.key)
     
-        // You can the mess arround with the data which will be inside the
+        // You can the mess around with the data which will be inside the
         // Data field
         if string(g.Data)==banana.value {
             // Yup the data was stored correctly
@@ -88,7 +88,7 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
             // Do something
         }
     
-        // NOTE: You can add the nested buckets whenever you want, just dont foget
+        // NOTE: You can add the nested buckets whenever you want, just dont forget
         // the order of the buckets. You can check the tests for more clarity.
     }
     
@@ -124,7 +124,7 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
             // Then programming is terrible, I quit
         }
     
-        // NOTE: You can add the nested buckets whenever you want, just dont foget
+        // NOTE: You can add the nested buckets whenever you want, just don't forget
         // the order of the buckets. You can check the tests for more clarity.
     
     }
@@ -135,7 +135,7 @@ BE Warned: The examples are from nutz_test.go file. Dont use dot imports in your
         // and in case of buckets it returns a error if they dont exist.
     
         // For a nested bucket list, and missing bucket in the list,
-        // or missarrangement result in an error.
+        // or bad arrangement result in an error.
     
         // initialize a new object
         s:=NewStorage("my_db.db",0600,nil)

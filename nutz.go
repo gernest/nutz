@@ -1,3 +1,8 @@
+/*
+Package nutz is a helper for interactions with bolt database. It makes messing with
+boltdb buckets really fun. Just as bolt database, it doesnt inted to be an orm, just
+buckets, buckets madness.
+*/
 package nutz
 
 
