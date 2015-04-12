@@ -1,4 +1,4 @@
-# nutz
+# nutz [![Build Status](https://drone.io/github.com/gernest/nutz/status.png)](https://drone.io/github.com/gernest/nutz/latest)
 
 work with bolt database buckets like crazy nuts.
 
