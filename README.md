@@ -1,4 +1,5 @@
-# nutz [![Build Status](https://drone.io/github.com/gernest/nutz/status.png)](https://drone.io/github.com/gernest/nutz/latest) [![GoDoc ](https://godoc.org/github.com/gernest/nutz?status.svg)](https://godoc.org/github.com/gernest/nutz)
+# nutz [![Build Status](https://drone.io/github.com/gernest/nutz/status.png)](https://drone.io/github.com/gernest/nutz/latest) [![GoDoc ](https://godoc.org/github.com/gernest/nutz?status.svg)](https://godoc.org/github.com/gernest/nutz)[![Coverage Status](https://coveralls.io/repos/gernest/nutz/badge.svg)](https://coveralls.io/r/gernest/nutz)
+
 
 work with bolt database buckets like crazy nuts.
 
@@ -7,7 +8,7 @@ work with bolt database buckets like crazy nuts.
 First install the package
 
     go get github.com/gernest/nutz
-    
+
 Now we can mess with the buckets like this
 
 ```go
@@ -54,5 +55,5 @@ func main() {
 # Contributions are welcome
 
 LICENCE MIT
- 
+
 
