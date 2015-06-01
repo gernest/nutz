@@ -1,297 +1,231 @@
 package nutz
 
 import (
+	"bytes"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestStorage(t *testing.T) {
-	tstore := NewStorage("storage_test.db", 0600, nil)
-	bList := []string{"bucket", "bucket", "bucket"}
+var (
+	tData = []struct {
+		key     string
+		value   []byte
+		buckets []string
+	}{
+		{"moja", []byte("moja"), []string{"one"}},
+		{"mbili", []byte("mbili"), []string{"one", "two"}},
+		{"tatu", []byte("tatu"), []string{"one", "two", "three"}},
+	}
+	s      = NewStorage("storage_test.db", 0600, nil)
+	single = struct {
+		bucket string
+		key    string
+		value  []byte
+	}{"single", "single", []byte("single")}
+	base = "base"
+	nest = []string{"solo", "bele", "gaza"}
+)
 
-	defer tstore.DeleteDatabase()
+func Test_Create(t *testing.T) {
+	//defer s.DeleteDatabase()
 
-	Convey("Working with boltdb store", t, func() {
-		Convey("Creating New Record", func() {
-			n := tstore.Create("base", "record", []byte("data"), bList...)
-			So(n.Error, ShouldBeNil)
-			So(n.Data, ShouldNotBeNil)
-			So(string(n.Data), ShouldEqual, "data")
-		})
+	for _, v := range tData {
+		err := s.Create(v.buckets[0], v.key, v.value, v.buckets...)
+		if err.Error != nil {
+			t.Errorf("creating records: %v", err.Error)
+		}
+	}
+	err := s.Create(single.bucket, single.key, single.value)
+	if err.Error != nil {
+		t.Errorf("creating a non nested record: %v", err.Error)
+	}
+	err = s.Create("", tData[0].key, tData[0].value)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	err = s.Create("", tData[0].key, tData[0].value, tData[0].buckets...)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	err = s.Create("correct", tData[0].key, tData[0].value, "", "")
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
+	err = s.Create("babel", "", tData[0].value, tData[0].buckets...)
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
+}
 
-		Convey("Getting records from database", func() {
+func Test_Get(t *testing.T) {
+	for _, v := range tData {
+		err := s.Get(v.buckets[0], v.key, v.buckets...)
+		if err.Error != nil {
+			t.Errorf("getting records: %v", err.Error)
+		}
+		if !bytes.Equal(err.Data, v.value) {
+			t.Errorf("getting records: expected %s got %s", string(v.value), string(err.Data))
+		}
+	}
 
-			Convey("Records in nested buckets", func() {
-				n := tstore.Create("base", "record2", []byte("data"), bList...)
-				So(n.Error, ShouldBeNil)
+	err := s.Get(single.bucket, single.key)
+	if err.Error != nil {
+		t.Errorf("getting a non nested record: %v", err.Error)
+	}
+	err = s.Get("", single.key)
+	if err.Error == nil {
+		t.Errorf("getting a non nested record:expected an error got %v", err.Error)
+	}
+	err = s.Get(single.bucket, "")
+	if err.Error == nil {
+		t.Errorf("getting a non nested record:expected an error got %v", err.Error)
+	}
+	err = s.Get("", tData[0].key, tData[0].buckets...)
+	if err.Error == nil {
+		t.Errorf("getting a non nested record:expected an error got %v", err.Error)
+	}
+	err = s.Get(tData[0].buckets[0], tData[0].key, "", "")
+	if err.Error == nil {
+		t.Errorf("getting a non nested record:expected an error got %v", err.Error)
+	}
+	err = s.Get(tData[0].buckets[0], "", tData[0].buckets...)
+	if err.Error == nil {
+		t.Errorf("getting a non nested record:expected an error got %v", err.Error)
+	}
+}
 
-				Convey("Record Found", func() {
-					g := n.Get("base", "record2", bList...)
-					So(g.Error, ShouldBeNil)
-					So(string(n.Data), ShouldEqual, string((g.Data)))
-				})
-				Convey("Record not found", func() {
-					g := n.Get("base", "recordz", bList...)
-					So(g.Error, ShouldNotBeNil)
-					So(g.Data, ShouldBeNil)
-				})
-				Convey("With a wrong bucket", func() {
-					g := n.Get("base2", "record2", bList...)
-					So(g.Error, ShouldNotBeNil)
-					So(g.Data, ShouldBeNil)
-				})
-				Convey("Wrong bucket list", func() {
-					list1 := []string{"bucket", "bucket", "chahchacha"}
-					list2 := []string{"bucket", "chachacha", "bucket"}
-					list3 := []string{"chachacha", "bucket", "bucket"}
+func Test_Update(t *testing.T) {
+	for _, v := range tData {
+		err := s.Update(v.buckets[0], v.key, []byte(v.buckets[0]), v.buckets...)
+		if err.Error != nil {
+			t.Errorf("updating records: %v", err.Error)
+		}
+		g := s.Get(v.buckets[0], v.key, v.buckets...)
+		if !bytes.Equal(g.Data, []byte(v.buckets[0])) {
+			t.Errorf("getting records: expected %s got %s", v.buckets[0], string(g.Data))
+		}
+	}
+	u := []byte("up-to-date")
+	err := s.Update(single.bucket, single.key, u)
+	if err.Error != nil {
+		t.Errorf("updating records: %v", err.Error)
+	}
+	err = s.Update("", tData[0].key, tData[0].value)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	err = s.Update(single.bucket, "", u)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	err = s.Update("", tData[0].key, u, tData[0].buckets...)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	err = s.Update(tData[0].buckets[0], tData[0].key, u, "", "")
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
+}
 
-					g1 := n.Get("base", "record2", list1...)
-					g2 := n.Get("base", "record2", list2...)
-					g3 := n.Get("base", "record2", list3...)
+func Test_GetAll(t *testing.T) {
+	base := "base"
+	nest := []string{"solo", "bele", "gaza"}
+	for _, v := range tData {
+		err := s.Create(base, v.key, v.value)
+		if err.Error != nil {
+			t.Errorf("creating records: %v", err.Error)
+		}
+	}
+	a := s.GetAll(base)
+	if a.Error != nil {
+		t.Errorf("getting all records: %v", a.Error)
+	}
+	if len(a.DataList) != 3 {
+		t.Errorf("expected 3 got %d", len(a.DataList))
+	}
+	err := s.GetAll("")
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
 
-					So(g1.Error, ShouldNotBeNil)
-					So(g1.Data, ShouldBeNil)
+	for _, v := range tData {
+		err := s.Create(base, v.key, v.value, nest...)
+		if err.Error != nil {
+			t.Errorf("creating records: %v", err.Error)
+		}
+	}
+	b := s.GetAll(base, nest...)
+	if b.Error != nil {
+		t.Errorf("getting all records: %v", b.Error)
+	}
+	if len(b.DataList) != 3 {
+		t.Errorf("expected 3 got %d", len(b.DataList))
+	}
+	err = s.GetAll("", nest...)
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
+	err = s.GetAll(base, "")
+	if err.Error == nil {
+		t.Errorf("expected an error got %v", err.Error)
+	}
+}
 
-					So(g2.Error, ShouldNotBeNil)
-					So(g2.Data, ShouldBeNil)
+func Test_Delete(t *testing.T) {
+	defer s.DeleteDatabase()
 
-					So(g3.Error, ShouldNotBeNil)
-					So(g3.Data, ShouldBeNil)
-				})
-			})
-			Convey("Records not in a nested bucket", func() {
-				n := tstore.Create("base", "record2", []byte("data"))
-				So(n.Error, ShouldBeNil)
+	err := s.Delete(single.bucket, single.key)
+	if err.Error != nil {
+		t.Errorf("deleting records %v", err.Error)
+	}
 
-				Convey("Record found", func() {
-					g := n.Get("base", "record2")
-					So(g.Error, ShouldBeNil)
-					So(string(n.Data), ShouldEqual, string((g.Data)))
-				})
+	err = s.Delete("", single.key)
+	if err.Error == nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
 
-				Convey("Wrong bucket list", func() {
-					g := n.Get("base", "record2", "bug")
-					So(g.Error, ShouldNotBeNil)
-					So(g.Data, ShouldBeNil)
-				})
-				Convey("With  bucket name ot in the database", func() {
-					g := n.Get("base2", "record2", "bug")
-					So(g.Error, ShouldNotBeNil)
-					So(g.Data, ShouldBeNil)
-				})
+	for _, v := range tData {
+		d := s.Delete(base, v.key, nest...)
+		if d.Error != nil {
+			t.Errorf("deleting records: %v", d.Error)
+		}
+		derr := s.Delete("", v.key, nest...)
+		if derr.Error == nil {
+			t.Errorf("expected error got %v", derr.Error)
+		}
+		derr = s.Delete(base, v.key, "")
+		if derr.Error == nil {
+			t.Errorf("expected error got %v", derr.Error)
+		}
+	}
+}
 
-			})
-
-		})
-
-		Convey("Updating database Record", func() {
-			Convey("With nested buckets", func() {
-				n := tstore.Create("base", "record2", []byte("data"), bList...)
-
-				Convey("Record Exist", func() {
-					up := n.Update("base", "record2", []byte("data update"), bList...)
-
-					uprec := up.Get("base", "record2", bList...)
-
-					So(up.Error, ShouldBeNil)
-					So(uprec.Error, ShouldBeNil)
-					So(string(uprec.Data), ShouldEqual, "data update")
-				})
-				Convey("Record does not exist", func() {
-					up := n.Update("base", "recordnp", []byte("data update"), bList...)
-
-					So(up.Error, ShouldNotBeNil)
-					So(up.Data, ShouldBeNil)
-				})
-				Convey("Wrong bucket", func() {
-					up := n.Update("basenp", "record2", []byte("data update"), bList...)
-
-					So(up.Error, ShouldNotBeNil)
-					So(up.Data, ShouldBeNil)
-				})
-				Convey("Wrong Bucket list", func() {
-					list := []string{"bucket", "bucket", "chachacha"}
-					up := n.Update("base", "record2", []byte("data update"), list...)
-
-					So(up.Error, ShouldNotBeNil)
-					So(up.Data, ShouldBeNil)
-				})
-			})
-			Convey("Without nested buckets", func() {
-				n := tstore.Create("basenot", "not_used", []byte("data"))
-				Convey("Record Exist", func() {
-					up := n.Update("basenot", "not_used", []byte("data update"))
-
-					uprec := up.Get("basenot", "not_used")
-
-					So(up.Error, ShouldBeNil)
-					So(uprec.Error, ShouldBeNil)
-					So(string(uprec.Data), ShouldEqual, "data update")
-				})
-				Convey("Record does not exist", func() {
-					up := n.Update("basenot", "nat_used2", []byte("data update"))
-
-					So(up.Error, ShouldNotBeNil)
-					So(up.Data, ShouldBeNil)
-				})
-				Convey("Wrong bucket", func() {
-					up := n.Update("basenot", "nat_used", []byte("data update"))
-
-					So(up.Error, ShouldNotBeNil)
-					So(up.Data, ShouldBeNil)
-				})
-			})
-
-		})
-
-		Convey("Get All key pairs from a given bucket", func() {
-			dd := []struct {
-				key, value string
-			}{
-				{"moja", "moja"},
-				{"mbili", "mbili"},
-				{"tatu", "tatu"},
-				{"nne", "nne"},
-			}
-			nest := [][]string{
-				[]string{"a", "b"},
-				[]string{"c", "d"},
-				[]string{"e", "d"},
-				[]string{"g", "h"},
-			}
-
-			buck := "bucky"
-
-			for k, v := range dd {
-				tstore.Create(buck, v.key, []byte(v.value), nest[k]...)
-			}
-			all := tstore.GetAll(buck)
-			allnest := all.GetAll(buck, nest[0]...)
-
-			So(len(all.DataList), ShouldEqual, 4)
-			So(len(allnest.DataList), ShouldEqual, 1)
-			So(string(allnest.DataList[dd[0].key]), ShouldEqual, dd[0].value)
-		})
-
-		Convey("Remove a record from the database", func() {
-			tstore.Create("base", "record2", []byte("data"), bList...)
-			tstore.Delete("base", "record2", bList...)
-
-			g := tstore.Get("base", "record2", bList...)
-
-			So(g.Data, ShouldBeNil)
-		})
-	})
+func Test_Execute(t *testing.T) {
+	defer s.DeleteDatabase()
+	err := s.Execute("home", "myKey", []byte("byVal"), []string{}, create)
+	if err.Error != nil {
+		t.Errorf("expected nil got %v", err.Error)
+	}
+	z := NewStorage("", 0600, nil)
+	err = z.Execute("home", "myKey", []byte("byVal"), []string{}, create)
+	if err.Error == nil {
+		t.Errorf("expected error got %v", err.Error)
+	}
 }
 
 func ExampleStorage_Create() {
-	// initialize a new storage
-	s := NewStorage("my_db.db", 0600, nil)
+	c := NewStorage("mydatabase.bdb", 0600, nil)
 
-	// For instance you want to store a banana.
-	banana := struct {
-		key, value string
-	}{"banana", "is sweet"}
+	// Without nesting
+	c.Create("my-bucket", "my-key", []byte("my-value"))
 
-	// You can store this inside a jungle bucket like this
-	b := s.Create("jungle", banana.key, []byte(banana.value))
+	// With nested buckets
+	c.Create("my-bucket", "my-key", []byte("my-value"), "bucket-one", "bucket-two")
 
-	// Lets say you want to store a specific banana from Tanzania
-	// you might do something like this
-
-	t := b.Create("jungle", banana.key, []byte(banana.value), "Tanzania")
-
-	// What  happens, is a bucket "Tanzania" is created insinside a bucket "jungle"
-	// and the key, value pairs( in our case banana ) are stored inside the nested bucket
-	// You can list as many buckets as you want and everything will work like a charm
-
-	// This will still work
-	n := t.Create("jungle", banana.key, []byte(banana.value), "Tanzania", "Mwanza", "Ilemela")
-
-	// You can check if your data was created successful by looking on the Errir field
-	// Optionally, the Data field contains the data written to the database
-
-	if n.Error != nil {
-		// You can do whatever you like
-	}
-
-}
-
-func ExampleStorage_Get() {
-	// This has similar API like the Create Method except
-	// only keys and buckets are required.
-
-	// initialize a new object
-	s := NewStorage("my_db.db", 0600, nil)
-
-	// Now we can store our bananas and Get them back as follows.
-	banana := struct {
-		key, value string
-	}{"banana", "is sweet"}
-
-	// Lets make sure there is banana uh
-	b := s.Create("jungle", banana.key, []byte(banana.value))
-
-	// Retrieving the above stored banana will be as simple like this
-	g := b.Get("jungle", banana.key)
-
-	// You can the mess arround with the data which will be inside the
-	// Data field
-	if string(g.Data) == banana.value {
-		// Yup the data was stored correctly
-	}
-
-	// And you can check if there were any errors involved
-	if g.Error != nil {
-		// Do something
-	}
-}
-
-func ExampleStorage_Remove() {
-	// Okay, say you want to delete records from the database
-
-	// initialize a new object
-	s := NewStorage("my_db.db", 0600, nil)
-
-	// Now we can store our bananas and Get them back as follows.
-	banana := struct {
-		key, value string
-	}{"banana", "is sweet"}
-
-	// first create a record which we will want to delete
-	b := s.Create("jungle", banana.key, []byte(banana.value))
-
-	r := b.Delete("jungle", banana.key)
-	if r.Error == nil {
-		// All is well
-	}
-
-	// you can check if I'm lying ( That we didnt delete the record
-
-	g := r.Get("jungle", banana.key)
-	if g.Data != nil {
-		// Then programming is terrible, I quit
-	}
-}
-
-func ExampleStorage_Update() {
-
-	// initialize a new object
-	s := NewStorage("my_db.db", 0600, nil)
-
-	banana := struct {
-		key, value string
-	}{"banana", "is sweet"}
-
-	// Lets save a banana
-	b := s.Create("jungle", banana.key, []byte(banana.value))
-
-	// We can then update the record like this
-	up := b.Update("jungle", banana.key, []byte("So sweet like"))
-
-	if up.Error == nil {
-		// All is well
-	}
-	// When you try to retrieve the banana record next time the value should be "So sweet like"
+	// When you nest buckets, the order of the optional coma separated strings matter.
+	// That is, on the above code snippet.
+	//  * A bucket named "my-bucket" will be created"
+	//  * Inside "my-bucket" a bucket "bucket-one" will be created.
+	//  * Inside "bucket-one" a bucket "bucket-two" will be created.
+	//  * Inside "bucket-two" a new record will be stored with key "my-key" and value "my-value"
 }
