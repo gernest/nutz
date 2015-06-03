@@ -3,6 +3,9 @@
 
 making work with bolt database fun again.
 
-LICENCE MIT
+## License
+
+This project is under the MIT License. See the [LICENSE](https://github.com/gernest/nutz/blob/master/LICENSE) file for the full license text.
+
 
 
