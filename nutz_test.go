@@ -148,10 +148,16 @@ func Test_GetAll(t *testing.T) {
 		t.Errorf("expected an error got %v", err.Error)
 	}
 
-	for _, v := range tData {
-		err := s.Create(base, v.key, v.value, nest...)
+	for k, v := range tData {
+		if k == 0 {
+			err := s.Create(base, v.key, v.value, nest...)
+			if err.Error != nil {
+				t.Errorf("creating records: %s  %v", v.key, err.Error)
+			}
+		}
+		err := s.Update(base, v.key, v.value, nest...)
 		if err.Error != nil {
-			t.Errorf("creating records: %v", err.Error)
+			t.Errorf("creating records: %s  %v", v.key, err.Error)
 		}
 	}
 	b := s.GetAll(base, nest...)

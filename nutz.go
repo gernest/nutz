@@ -314,16 +314,21 @@ func getNestedBucket(n []string, b *bolt.Bucket) (*bolt.Bucket, error) {
 }
 
 func createNestedBuckets(n []string, b *bolt.Bucket) (*bolt.Bucket, error) {
-	var prev *bolt.Bucket
-	var uerr error
+	var (
+		prev, curr *bolt.Bucket
+		err        error
+	)
 	prev = b
 	for i := 0; i < len(n); i++ {
-		curr, err := prev.CreateBucketIfNotExists([]byte(n[i]))
+		if i == len(n)-1 {
+			curr, err = prev.CreateBucket([]byte(n[i]))
+		} else {
+			curr, err = prev.CreateBucketIfNotExists([]byte(n[i]))
+		}
 		if err != nil {
-			uerr = err
 			break
 		}
 		prev = curr
 	}
-	return prev, uerr
+	return prev, err
 }
