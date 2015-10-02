@@ -54,6 +54,18 @@ func main() {
 
 ```
 
+# Contributing
+
+Start with clicking the star button to make the author and his neighbors happy. Then fork it and submit a pull request for whatever change you want to be added to this project.
+
+Or, open an issue for any questions.
+
+# Author
+Geofrey Ernest <geofreyernest@live.com>
+
+Twitter  : [@gernesti](https://twitter.com/gernesti)
+
+
 ## License
 
 This project is under the MIT License. See the [LICENSE](https://github.com/gernest/nutz/blob/master/LICENCE) file for the full license text.
