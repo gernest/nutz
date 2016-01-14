@@ -268,6 +268,22 @@ func remove(s Storage, bucket, key string, value []byte, nested ...string) Stora
 	return s
 }
 
+// DeleteBucket removes a bucket and all child buckets from the database
+func (s Storage) DeleteBucket(bucket string) Storage {
+	return s.execute(bucket, "", nil, nil, removeBucket)
+}
+
+func removeBucket(s Storage, bucket, key string, value []byte, nested ...string) Storage {
+	s.Error = s.db.Update(func(tx *bolt.Tx) error {
+		err := tx.DeleteBucket([]byte(bucket))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return s
+}
+
 // DeleteDatabase removes the given database file as specified in the NewStorage function
 // from the filesystem
 func (s Storage) DeleteDatabase() error {
