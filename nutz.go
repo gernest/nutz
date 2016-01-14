@@ -321,7 +321,7 @@ func createNestedBuckets(n []string, b *bolt.Bucket) (*bolt.Bucket, error) {
 	prev = b
 	for i := 0; i < len(n); i++ {
 		if i == len(n)-1 {
-			curr, err = prev.CreateBucket([]byte(n[i]))
+			curr, err = prev.CreateBucketIfNotExists([]byte(n[i]))
 		} else {
 			curr, err = prev.CreateBucketIfNotExists([]byte(n[i]))
 		}
