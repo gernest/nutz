@@ -7,6 +7,10 @@ stay faithful with the bolt database view of "simple API".
 - [x] You want to maintain more than one database
 - [x] Your project uses nested buckets extensively.
 
+## Installation
+```bash
+go get github.com/gernest/nutz
+```
 ## How to use
 
 ```go
