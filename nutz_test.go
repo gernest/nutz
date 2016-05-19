@@ -178,8 +178,6 @@ func Test_GetAll(t *testing.T) {
 }
 
 func Test_Delete(t *testing.T) {
-	defer s.DeleteDatabase()
-
 	err := s.Delete(single.bucket, single.key)
 	if err.Error != nil {
 		t.Errorf("deleting records %v", err.Error)
@@ -203,6 +201,25 @@ func Test_Delete(t *testing.T) {
 		if derr.Error == nil {
 			t.Errorf("expected error got %v", derr.Error)
 		}
+	}
+}
+
+func Test_DeleteBucket(t *testing.T) {
+	defer s.DeleteDatabase()
+
+	err := s.DeleteBucket(single.bucket)
+	if err.Error != nil {
+		t.Errorf("deleting bucket %v", err.Error)
+	}
+
+	err = s.DeleteBucket(base)
+	if err.Error != nil {
+		t.Errorf("deleting base bucket %v", err.Error)
+	}
+
+	err = s.DeleteBucket(nest[0])
+	if err.Error == nil {
+		t.Errorf("expected error got %v", err.Error)
 	}
 }
 
